@@ -26,7 +26,7 @@ func check(e error) {
 	}
 }
 
-var sessionkey = []byte{9, 10, 11, 12, 13, 14, 15, 16}
+var sessionkey = []byte{}
 
 type Callback struct{}
 
@@ -48,7 +48,6 @@ func (this *Callback) OnMessage(c *gotcp.Conn, p gotcp.Packet) bool {
 	if body[0] == 1 {
 		// masterkey := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 		paket := echo.NewEchoPacket([]byte("OK1"), false)
-		plaintext := make([]byte, 8)
 
 		sessionEncryptKey := echoPacket.GetBody()[1:]
 		fmt.Println("sessionEncryptKey:", sessionEncryptKey)
@@ -59,11 +58,12 @@ func (this *Callback) OnMessage(c *gotcp.Conn, p gotcp.Packet) bool {
 		check(err)
 		fmt.Println(ExportPrivateKeyAsPemStr(renPrivateKey))
 
-		sessionkey, err := rsa.DecryptPKCS1v15(rand.Reader, renPrivateKey, sessionEncryptKey)
+		decryptSessionsKey, err := rsa.DecryptPKCS1v15(rand.Reader, renPrivateKey, sessionEncryptKey)
 		if err != nil {
 			fmt.Printf("error decrypting: %s", err)
 		}
-		copy(sessionkey, plaintext[0:8])
+		sessionkey = decryptSessionsKey
+		//Tampilkan session key
 		fmt.Println("SESSION KEY:", sessionkey)
 		c.AsyncWritePacket(paket, time.Second)
 
